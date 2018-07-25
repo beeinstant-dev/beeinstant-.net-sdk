@@ -21,7 +21,7 @@ namespace BeeInstant.NetSDK.Tests
         [Fact]
         public void FlushedCounterResetsToInitialValue()
         {
-            var counter = new Counter(100);
+            var counter = new Counter(initialValue: 100);
             counter.IncrementCounter(1); 
 
             var before = counter.FlushToString();
@@ -34,7 +34,7 @@ namespace BeeInstant.NetSDK.Tests
         [Fact]
         public void ResetCounterSwitchesToInitialValue()
         {
-            var counter = new Counter(120);
+            var counter = new Counter(initialValue: 120);
             var before = counter.GetValue();
 
             counter.IncrementCounter(5);
