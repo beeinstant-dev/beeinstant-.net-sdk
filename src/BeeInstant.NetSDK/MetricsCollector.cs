@@ -35,6 +35,7 @@ namespace BeeInstant.NetSDK
             if(!Dimensions.IsValidName(counterName))
             {
                 //TODO: MetricsManager.reportError
+                return;
             }
 
             if(_metrics.ContainsKey(counterName))
@@ -83,6 +84,7 @@ namespace BeeInstant.NetSDK
         {
             if(!Dimensions.IsValidName(metricName))
             {
+                return;
                 //TODO: MetricsManager.reportError
                 // throw new ArgumentException($"Invalid recorder name: {metricName}.");
             }
@@ -132,6 +134,7 @@ namespace BeeInstant.NetSDK
             if(!Dimensions.IsValidName(timerName))
             {
                 //TODO: MetricsManager.reportError
+                return;
             }
 
             if(_metrics.ContainsKey(timerName))

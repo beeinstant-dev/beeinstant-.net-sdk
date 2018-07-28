@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BeeInstant.NetSDK.Tests.Utils;
 using Xunit;
 
 namespace BeeInstant.NetSDK.Tests
@@ -34,7 +35,7 @@ namespace BeeInstant.NetSDK.Tests
             second.StopTimer();
 
             first.Merge(second);
-            AssertRecorderOutput(new[] { 300.0M }, Unit.MilliSecond, first.FlushToString(), 30.0M);
+            RecorderUtils.AssertRecorderOutput(new[] { 300.0M }, Unit.MilliSecond, first.FlushToString(), 30.0M);
         }
 
         [Fact]
@@ -57,31 +58,6 @@ namespace BeeInstant.NetSDK.Tests
             var timer = new Timer().Merge(new Timer());
 
             Assert.Equal(string.Empty, timer.FlushToString());
-        }
-
-        private void AssertRecorderOutput(IList<decimal> expected, Unit unit, string actual, decimal epsilon)
-        {
-            Assert.True(actual.EndsWith(unit.ToString()));
-
-            var values = actual.Substring(0, actual.Length - unit.ToString().Length)
-                                .Split(new[] { '+' }, StringSplitOptions.RemoveEmptyEntries);
-
-            var actualValues = new List<decimal>();
-
-            foreach (var val in values)
-            {
-                if (Decimal.TryParse(val, out decimal d))
-                {
-                    actualValues.Add(d);
-                }
-            }
-
-            Assert.Equal(expected.Count, actualValues.Count);
-            
-            for(int i = 0; i < expected.Count; i++)
-            {
-                Assert.True(Math.Abs(expected[i] - actualValues[i]) <= epsilon);
-            }
         }
 
     }

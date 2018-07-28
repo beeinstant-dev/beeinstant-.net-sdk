@@ -14,7 +14,12 @@ namespace BeeInstant.NetSDK
         }
 
         public ITimer Merge(ITimer target)
-        {
+        {   
+            if(target == null || target == this)
+            {
+                return this;
+            }
+
             var targetTimer = (Timer)target;
             this.Recorder.Merge(targetTimer.Recorder);
             return this;

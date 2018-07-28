@@ -36,7 +36,7 @@ namespace BeeInstant.NetSDK
 
         public IRecorder Merge(IRecorder target)
         {
-            if(target == null)
+            if(target == null || target == this)
             {
                 return this;
             }

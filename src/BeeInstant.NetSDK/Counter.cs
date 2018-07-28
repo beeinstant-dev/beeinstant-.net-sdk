@@ -37,7 +37,7 @@ namespace BeeInstant.NetSDK
 
         public ICounter Merge(ICounter target)
         {
-            if(target == null)
+            if(target == null || target == this)
             {
                 return this;
             }
