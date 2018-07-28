@@ -2,8 +2,8 @@ namespace BeeInstant.NetSDK.Abstractions
 {
     public interface ITimer : IMetric<ITimer>
     {
-        long StartTimer();
+        void StartTimer();
 
-        void StopTimer(long startTime);
+        void StopTimer();
     }
 }

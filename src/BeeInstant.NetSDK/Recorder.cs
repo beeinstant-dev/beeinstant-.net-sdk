@@ -8,20 +8,20 @@ namespace BeeInstant.NetSDK
 {
     public class Recorder : IRecorder
     {
-        private readonly ConcurrentQueue<double> queue;
+        private readonly ConcurrentQueue<decimal> queue;
         private readonly Unit _unit;
 
         public Recorder(Unit unit)
         {
             _unit = unit;
-            queue = new ConcurrentQueue<double>();
+            queue = new ConcurrentQueue<decimal>();
         }
 
         public string FlushToString()
         {
-            var values = new List<double>();
+            var values = new List<decimal>();
 
-            while(queue.TryPeek(out double val))
+            while(queue.Any() && queue.TryDequeue(out decimal val))
             {
                 values.Add(val);
             }
@@ -42,7 +42,7 @@ namespace BeeInstant.NetSDK
             }
 
             var recorder = (Recorder)target;
-            while(recorder.queue.TryPeek(out double res))
+            while(recorder.queue.Any() && recorder.queue.TryDequeue(out decimal res))
             {
                 Record(res, recorder._unit);
             }
@@ -50,12 +50,11 @@ namespace BeeInstant.NetSDK
             return this;
         }
 
-        public void Record(double value, Unit unit)
+        public void Record(decimal value, Unit unit)
         {
-            //TODO: implement equality comparer for Unit;
             if(_unit.Equals(unit))
             {
-                queue.Enqueue(Math.Max(0.0d, value));
+                queue.Enqueue(Math.Max(0.0M, value));
             }
         }
     }
