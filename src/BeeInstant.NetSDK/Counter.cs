@@ -9,15 +9,9 @@ namespace BeeInstant.NetSDK
         private long _initialValue;
         private long _count;
 
-        public Counter()
-        {
-            _count = _initialValue = 0;
-        }
+        public Counter() => _count = _initialValue = 0;
 
-        public Counter(long initialValue)
-        {
-            _count = _initialValue = initialValue;
-        }
+        public Counter(long initialValue) => _count = _initialValue = initialValue;
 
         public string FlushToString()
         {
@@ -35,7 +29,7 @@ namespace BeeInstant.NetSDK
 
         public void IncrementCounter(long value)
         {
-            if(value < 0)
+            if (value < 0)
                 return;
 
             Interlocked.Add(ref _count, value);
@@ -43,10 +37,15 @@ namespace BeeInstant.NetSDK
 
         public ICounter Merge(ICounter target)
         {
+            if(target == null)
+            {
+                return this;
+            }
+
             var targetValue = target.GetValue();
             target.Reset();
 
-            if(targetValue >= 0)
+            if (targetValue >= 0)
             {
                 this.IncrementCounter(targetValue);
             }

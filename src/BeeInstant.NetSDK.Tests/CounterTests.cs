@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -10,8 +9,9 @@ namespace BeeInstant.NetSDK.Tests
         public void CounterIncrementIsThreadSafe()
         {
             var counter = new Counter();
-            
-            Parallel.For(0, 10000, (x) => {
+
+            Parallel.For(0, 10000, (x) =>
+            {
                 counter.IncrementCounter(1);
             });
 
@@ -22,7 +22,7 @@ namespace BeeInstant.NetSDK.Tests
         public void FlushedCounterResetsToInitialValue()
         {
             var counter = new Counter(initialValue: 100);
-            counter.IncrementCounter(1); 
+            counter.IncrementCounter(1);
 
             var before = counter.FlushToString();
             var after = counter.FlushToString();

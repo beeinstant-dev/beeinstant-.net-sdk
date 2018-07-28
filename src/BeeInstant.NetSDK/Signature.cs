@@ -14,7 +14,7 @@ namespace BeeInstant.NetSDK
             var alg = new HMACSHA256(keyByteArray);
             alg.Initialize();
 
-            using(var ms = new MemoryStream(data))
+            using (var ms = new MemoryStream(data))
             {
                 var hash = alg.ComputeHash(data);
                 return Convert.ToBase64String(hash);

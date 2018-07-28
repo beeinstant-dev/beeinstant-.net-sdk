@@ -5,7 +5,7 @@ namespace BeeInstant.NetSDK.Abstractions
         void IncrementCounter(long value);
 
         long GetValue();
-
+        
         void Reset();
     }
 }
