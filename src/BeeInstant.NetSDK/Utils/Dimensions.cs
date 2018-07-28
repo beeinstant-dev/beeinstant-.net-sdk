@@ -10,6 +10,11 @@ namespace BeeInstant.NetSDK.Utils
         private static readonly string _pattern = "^[A-Za-z0-9\\+\\-\\*/:_\\.]+$";
         private static readonly Regex _regex = new Regex(_pattern);
 
+        internal static bool IsValidName(string name)
+        {
+            return _regex.IsMatch(name);
+        }
+
         internal static string ExtendAndSerializeDimensions(Dictionary<string, string> rootDimesions, string targetDimensions)
         {
             if (string.IsNullOrEmpty(targetDimensions))
@@ -71,9 +76,5 @@ namespace BeeInstant.NetSDK.Utils
             return String.Join(",", dimensionsToJoin);
         }
 
-        private static bool IsValidName(string name)
-        {
-            return _regex.IsMatch(name);
-        }
     }
 }

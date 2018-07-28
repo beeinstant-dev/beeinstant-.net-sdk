@@ -57,5 +57,15 @@ namespace BeeInstant.NetSDK
                 queue.Enqueue(Math.Max(0.0M, value));
             }
         }
+
+        IMetric IMetric.Merge(IMetric target)
+        {
+            if(target is IRecorder)
+            {
+                this.Merge(target as IRecorder);
+            }
+
+            return this;
+        }
     }
 }

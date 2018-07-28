@@ -57,5 +57,15 @@ namespace BeeInstant.NetSDK
         {
             return Interlocked.Read(ref _count);
         }
+
+        IMetric IMetric.Merge(IMetric target)
+        {
+            if(target is ICounter)
+            {
+                this.Merge(target as ICounter);
+            }
+
+            return this;
+        }
     }
 }

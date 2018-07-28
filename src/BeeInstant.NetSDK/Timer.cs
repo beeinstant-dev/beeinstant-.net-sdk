@@ -40,5 +40,15 @@ namespace BeeInstant.NetSDK
             _timer.Stop();
             Recorder.Record(_timer.ElapsedMilliseconds, Unit.MilliSecond);
         }
+
+        IMetric IMetric.Merge(IMetric target)
+        {
+            if(target is ITimer)
+            {
+                this.Merge(target as ITimer);
+            }
+
+            return this;
+        }
     }
 }

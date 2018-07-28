@@ -1,9 +1,13 @@
 namespace BeeInstant.NetSDK.Abstractions
 {
-    public interface IMetric<T>
+    public interface IMetric<T> : IMetric
     {
-        string FlushToString();
-
         T Merge(T target);
+    }
+
+    public interface IMetric
+    {
+        IMetric Merge(IMetric target);
+        string FlushToString();
     }
 }
