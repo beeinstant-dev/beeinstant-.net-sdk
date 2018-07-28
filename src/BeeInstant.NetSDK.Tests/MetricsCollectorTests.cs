@@ -1,15 +1,14 @@
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using BeeInstant.NetSDK.Tests.Utils;
+using BeeInstant.NetSDK.Tests.TestUtils;
 using Xunit;
 
 namespace BeeInstant.NetSDK.Tests
 {
     public class MetricsCollectorTests
     {
-        private readonly string _expectedFlushedCollector = "m.MyTimer=\\d.\\dms,m.MyCounter=99,m.Recorder=100.0b";
-
+        
         [Fact]
         public void TestCounters()
         {

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BeeInstant.NetSDK.Tests.Utils;
+using BeeInstant.NetSDK.Tests.TestUtils;
 using Xunit;
 
 namespace BeeInstant.NetSDK.Tests

@@ -5,27 +5,27 @@ using System.Text.RegularExpressions;
 
 namespace BeeInstant.NetSDK.Utils
 {
-    internal static class Dimensions
+    public static class Dimensions
     {
         private static readonly string _pattern = "^[A-Za-z0-9\\+\\-\\*/:_\\.]+$";
         private static readonly Regex _regex = new Regex(_pattern);
 
-        internal static bool IsValidName(string name)
+        public static bool IsValidName(string name)
         {
             return _regex.IsMatch(name);
         }
 
-        internal static string ExtendAndSerializeDimensions(Dictionary<string, string> rootDimesions, string targetDimensions)
+        public static string ExtendAndSerializeDimensions(IDictionary<string, string> rootDimensions, string targetDimensions)
         {
             if (string.IsNullOrEmpty(targetDimensions))
-                return SerializeDimensionsToString(rootDimesions);
+                return string.Empty;
 
             var newDimensions = ParseDimensions(targetDimensions);
 
-            if (newDimensions.Any())
+            if (!newDimensions.Any())
                 return string.Empty;
 
-            foreach (var dim in rootDimesions)
+            foreach (var dim in rootDimensions)
             {
                 if (!newDimensions.ContainsKey(dim.Key))
                 {
@@ -36,14 +36,14 @@ namespace BeeInstant.NetSDK.Utils
             return SerializeDimensionsToString(newDimensions);
         }
 
-        private static Dictionary<String, String> ParseDimensions(string dimensions)
+        public static IDictionary<String, String> ParseDimensions(string dimensions)
         {
-            var dimensionsMap = new Dictionary<String, String>();
+            var dimensionsMap = new SortedDictionary<String, String>();
             var commaSeparatedDimensions = dimensions.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var commaSeparated in commaSeparatedDimensions)
             {
-                var keyValues = commaSeparated.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                var keyValues = commaSeparated.Split(new[] { '=' }, StringSplitOptions.RemoveEmptyEntries);
 
                 if (keyValues.Length != 2)
                 {
@@ -57,7 +57,7 @@ namespace BeeInstant.NetSDK.Utils
 
                 if (IsValidName(key) && IsValidName(val))
                 {
-                    dimensionsMap.Add(key, val);
+                    dimensionsMap.AddOrUpdate(key, val);
                 }
                 else
                 {
@@ -70,7 +70,7 @@ namespace BeeInstant.NetSDK.Utils
             return dimensionsMap;
         }
 
-        private static string SerializeDimensionsToString(Dictionary<string, string> dimensions)
+        private static string SerializeDimensionsToString(IDictionary<string, string> dimensions)
         {
             var dimensionsToJoin = dimensions.Select(x => $"d.{x.Key}={x.Value}").ToArray();
             return String.Join(",", dimensionsToJoin);

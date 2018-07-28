@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-namespace BeeInstant.NetSDK.Tests.Utils
+namespace BeeInstant.NetSDK.Tests.TestUtils
 {
     public static class RecorderUtils
     {
