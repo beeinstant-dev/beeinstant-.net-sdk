@@ -32,10 +32,10 @@ Open a BeeInstant account on https://beeinstant.com. After your account is activ
 
 ```
 {
-    "flushInSeconds": "5",
-    "FlushStartDelayInSeconds": "10",
-    "IsManualFlush": true,
-    "publicKey": "yourPublicKey",
+    "flushInSeconds": "5", //flush existing metrics to the server every 5 seconds
+    "flushStartDelayInSeconds": "10", //due time before automatically sending first metric to the server
+    "isManualFlush": true, // true is the metrics need to be pushed to the server automatically (form background process within your application)
+    "publicKey": "yourPublicKey", 
     "secretKey": "yourSecretKey",
     "endPoint": "https://{endpoint}.beeinstant.com"
 }
@@ -177,7 +177,7 @@ void HandleVideoUpload() {
             // Compressing video here...
         }
 
-        final Metrics storeMetrics = metricsLogger.ExtendDimensions("step=Store");
+        var storeMetrics = metricsLogger.ExtendDimensions("step=Store");
         using (var storeTimer = storeMetrics.StartTimer("Time")) {
             // Storing video here...
         }
