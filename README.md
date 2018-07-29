@@ -12,7 +12,7 @@ Example: Measure execution time of a critical process.
 MetricsManager.Initialize("MyCriticalService");
 
 // Get a metric logger inspired from traditional logger
-var metricsLogger = MetricsManager.getRootMetricsLogger();
+var metricsLogger = MetricsManager.GetRootMetricsLogger();
 
 // Measure execution time with metric name "ExecutionTime"
 using(var timer = metricsLogger.StartTimer("ExecutionTime")) 
