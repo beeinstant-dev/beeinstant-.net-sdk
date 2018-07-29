@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace BeeInstant.NetSDK.Utils
 {
-    public static class DictionaryExtensions
+    public static class IDictionaryExtensions
     {
         public static void AddOrUpdate<K, V>(this SortedDictionary<K, V> dict, K key, V value)
         {

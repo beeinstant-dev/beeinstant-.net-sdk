@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using BeeInstant.NetSDK.Abstractions;
 
@@ -43,7 +44,9 @@ namespace BeeInstant.NetSDK
             }
 
             _timer.Stop();
-            Recorder.Record(_timer.ElapsedMilliseconds, Unit.MilliSecond);
+
+            //multiplying by 1.0M to get decimal formatted as *.0 by default
+            Recorder.Record(Convert.ToDecimal(_timer.ElapsedMilliseconds) * 1.0M, Unit.MilliSecond);
         }
 
         IMetric IMetric.Merge(IMetric target)
