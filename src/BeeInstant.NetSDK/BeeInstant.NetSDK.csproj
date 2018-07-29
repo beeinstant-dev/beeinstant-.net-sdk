@@ -13,6 +13,23 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
     <PackageReference Include="System.Reactive" Version="4.0.0" />
   </ItemGroup>
+  
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.1</Version>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Company>BeeInstant</Company>
+    <Authors>BeeInstant</Authors>
+    <PackageProjectUrl>https://github.com/trungnq97/BeeInstant.NetSDK</PackageProjectUrl>
+    <PackageTags>beeInstant .net sdk</PackageTags>
+    <Copyright>Copyright ©2018 BeeInstant</Copyright>
+    <Description>BeeInstant .NET SDK is a powerful tool for software/dev-ops engineers to define and publish custom metrics to BeeInstant. By using clean and simple APIs, engineers can track their software performance with counters, timers, and recorders in real-time.</Description>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <NeutralLanguage>en</NeutralLanguage>
+    <RepositoryUrl>https://github.com/trungnq97/BeeInstant.NetSDK</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
 
   <ItemGroup>
     <Content Include="beeInstant.config.json">

@@ -26,7 +26,6 @@ namespace BeeInstant.NetSDK.Tests
         [Fact]
         public void FlushAll()
         {
-            MetricsManager.Initialize("Test", "Test");
             Assert.Null(Record.Exception(() =>
             {
                 CollectTestMetrics("api=Upload");

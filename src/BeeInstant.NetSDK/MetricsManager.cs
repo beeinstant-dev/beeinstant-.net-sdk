@@ -254,7 +254,9 @@ namespace BeeInstant.NetSDK
                 };
 
                 var result = _httpClient.SendAsync(request).Result;
-                Logger.LogInformation($"Response: {result.Content.ReadAsStringAsync().Result}");
+                var content = result.Content.ReadAsStringAsync().Result;
+                var statusCode = result.StatusCode;
+                Logger.LogInformation($"Response with status code {statusCode} and content: {content}");
             }
             catch (Exception e)
             {
