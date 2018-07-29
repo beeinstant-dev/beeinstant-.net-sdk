@@ -1,21 +1,37 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 BeeInstant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+ * to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions
+ * of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using BeeInstant.NetSDK.Abstractions;
-using BeeInstant.NetSDK.Tests.Utils;
+using BeeInstant.NetSDK.Tests.TestUtils;
 using Xunit;
 
 namespace BeeInstant.NetSDK.Tests
 {
     public class MetricsLoggerTests
     {
-
-        private static object locker = new object();
+        private static readonly object Locker = new object();
 
         [Fact]
         public void EmptyLoggerReturnsEmptyString()
@@ -29,7 +45,7 @@ namespace BeeInstant.NetSDK.Tests
             var logger = CreateTestLogger();
             CollectTestMetrics(logger);
             StringUtils.EnsureMatchesAllMetrics(logger.FlushToString(),
-                                                 "d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
+                "d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
 
             Assert.Equal(string.Empty, logger.FlushToString());
         }
@@ -51,22 +67,23 @@ namespace BeeInstant.NetSDK.Tests
             var metrics = logger.ExtendDimensions("api=Upload, location=Hanoi");
             CollectTestMetrics(metrics);
             StringUtils.EnsureMatchesAllMetrics(logger.FlushToString(),
-                                                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
+                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
 
             CollectTestMetrics(metrics);
             StringUtils.EnsureMatchesAllMetrics(logger.FlushToString(),
-                                                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
+                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
         }
 
         [Fact]
         public void TestExtendMultipleDimensions()
         {
             var logger = CreateTestLogger();
-            var metric = logger.ExtendMultipleDimensions("api=Upload, location=Hanoi", "api=Download", "api=Download", "");
+            var metric =
+                logger.ExtendMultipleDimensions("api=Upload, location=Hanoi", "api=Download", "api=Download", "");
             CollectTestMetrics(metric);
             StringUtils.EnsureMatchesAllMetrics(logger.FlushToString(),
-                                                "d.api=Download,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
-                                                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
+                "d.api=Download,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
+                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
         }
 
         [Fact]
@@ -77,16 +94,16 @@ namespace BeeInstant.NetSDK.Tests
             CollectTestMetrics(metrics);
 
             StringUtils.EnsureMatchesAllMetrics(logger.FlushToString(),
-                                                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
-                                                "d.api=Download,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
-                                                "d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
+                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
+                "d.api=Download,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
+                "d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
 
             CollectTestMetrics(metrics);
 
             StringUtils.EnsureMatchesAllMetrics(logger.FlushToString(),
-                                                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
-                                                "d.api=Download,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
-                                                "d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
+                "d.api=Upload,d.location=Hanoi,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
+                "d.api=Download,d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms",
+                "d.service=ImageSharing,m.NumOfUploadedImages=1000,m.ImageSize=100.0\\+200.0kb,m.Latency=\\d+.\\dms");
         }
 
         [Fact]
@@ -95,17 +112,10 @@ namespace BeeInstant.NetSDK.Tests
             var logger = CreateTestLogger();
             var tasks = new List<Task>();
             var output = new ConcurrentQueue<string>();
-            var rnd = new Random();
 
-            tasks.AddRange(PopulateTasks(50, 10, () =>
-            {
-                logger.IncrementCounter("Counter", 1);
-            }));
+            tasks.AddRange(PopulateTasks(50, 10, () => { logger.IncrementCounter("Counter", 1); }));
 
-            tasks.AddRange(PopulateTasks(50, 10, () =>
-            {
-                logger.Record("Recorder", 1.0M, Unit.Second);
-            }));
+            tasks.AddRange(PopulateTasks(50, 10, () => { logger.Record("Recorder", 1.0M, Unit.Second); }));
 
             tasks.AddRange(PopulateTasks(50, 10, () =>
             {
@@ -113,10 +123,7 @@ namespace BeeInstant.NetSDK.Tests
                 timer.Dispose();
             }));
 
-            tasks.AddRange(PopulateTasks(1, 10, () =>
-            {
-                output.Enqueue(logger.FlushToString());
-            }));
+            tasks.AddRange(PopulateTasks(1, 10, () => { output.Enqueue(logger.FlushToString()); }));
 
             tasks.Shuffle();
 
@@ -133,9 +140,9 @@ namespace BeeInstant.NetSDK.Tests
             var expectedDimensions = "d.service=ImageSharing,";
 
             foreach (var logEntry in output.Where(x => !string.IsNullOrEmpty(x))
-                                            .Select(x => x.Replace("\n", "")))
+                .Select(x => x.Replace("\n", string.Empty).Replace("\r", string.Empty)))
             {
-                Assert.True(logEntry.StartsWith(expectedDimensions));
+                Assert.StartsWith(expectedDimensions, logEntry);
                 Assert.True(logEntry.Length > expectedDimensions.Length);
 
                 recorderValues.AddRange(AssertAndExtractValues(logEntry, "Recorder", Unit.Second.ToString()).ToList());
@@ -149,13 +156,13 @@ namespace BeeInstant.NetSDK.Tests
             Assert.Equal(500.0M, counterValues.Sum());
         }
 
-        private ICollection<decimal> AssertAndExtractValues(string input, string metricName, string unit = "")
+        private static IEnumerable<decimal> AssertAndExtractValues(string input, string metricName, string unit = "")
         {
             var recorderValuesString = ExtractMetricValues(metricName, input);
 
             if (!string.IsNullOrEmpty(recorderValuesString))
             {
-                Assert.True(recorderValuesString.EndsWith(unit));
+                Assert.EndsWith(unit, recorderValuesString);
                 var decimalString = recorderValuesString.Substring(0, recorderValuesString.Length - unit.Length);
                 return ConvertValuesStringToListOfDecimals(decimalString).ToList();
             }
@@ -163,50 +170,49 @@ namespace BeeInstant.NetSDK.Tests
             return new List<decimal>();
         }
 
-        private ICollection<decimal> ConvertValuesStringToListOfDecimals(string input)
+        private static IEnumerable<decimal> ConvertValuesStringToListOfDecimals(string input)
         {
             var result = new List<decimal>();
 
-            if (!string.IsNullOrEmpty(input))
+            if (string.IsNullOrEmpty(input))
             {
-                var values = input.Split(new[] { "+" }, StringSplitOptions.RemoveEmptyEntries)
-                                  .Select(x => Decimal.Parse(x))
-                                  .ToList();
-
-                result.AddRange(values);
+                return result;
             }
+
+            var values = input.Split(new[] {"+"}, StringSplitOptions.RemoveEmptyEntries)
+                .Select(decimal.Parse)
+                .ToList();
+
+            result.AddRange(values);
 
             return result;
         }
 
-        private string ExtractMetricValues(string metricName, string input)
+        private static string ExtractMetricValues(string metricName, string input)
         {
             var regex = new Regex($".+m.{metricName}=([^\\n,]+).*");
             var matches = regex.Matches(input);
 
-            if (matches.Any())
+            if (!matches.Any())
             {
-                var firstMatch = matches.First();
-                if (firstMatch.Groups.Count >= 2)
-                {
-                    return firstMatch.Groups.ElementAt(1).Value;
-                }
+                return string.Empty;
             }
 
-            return string.Empty;
+            var firstMatch = matches.First();
+            return firstMatch.Groups.Count >= 2 ? firstMatch.Groups.ElementAt(1).Value : string.Empty;
         }
 
-        private IList<Task> PopulateTasks(int samples, int totalTasks, Action action)
+        private static IEnumerable<Task> PopulateTasks(int samples, int totalTasks, Action action)
         {
             var tasks = new List<Task>();
 
-            for (int i = 0; i < totalTasks; i++)
+            for (var i = 0; i < totalTasks; i++)
             {
                 tasks.Add(new Task(() =>
                 {
-                    lock (locker)
+                    lock (Locker)
                     {
-                        for (int j = 0; j < samples; j++)
+                        for (var j = 0; j < samples; j++)
                         {
                             action.Invoke();
                         }
@@ -217,9 +223,9 @@ namespace BeeInstant.NetSDK.Tests
             return tasks;
         }
 
-        private MetricsLogger CreateTestLogger() => new MetricsLogger("service=ImageSharing");
+        private static MetricsLogger CreateTestLogger() => new MetricsLogger("service=ImageSharing");
 
-        private void CollectTestMetrics(IMetricsComposer metrics)
+        private static void CollectTestMetrics(IMetricsComposer metrics)
         {
             metrics.IncrementCounter("NumOfUploadedImages", 1000);
             var timer = metrics.StartTimer("Latency");

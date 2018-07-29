@@ -1,4 +1,22 @@
-using System;
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 BeeInstant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+ * to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions
+ * of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,17 +27,17 @@ namespace BeeInstant.NetSDK
 {
     public class MetricsCollector : IMetricsComposer<MetricsCollector>
     {
-        private ConcurrentDictionary<string, IMetric> _metrics = new ConcurrentDictionary<string, IMetric>();
+        private readonly ConcurrentDictionary<string, IMetric> _metrics = new ConcurrentDictionary<string, IMetric>();
 
         public string FlushToString()
         {
             var flushedMetrics = new List<string>();
 
-            foreach(var kv in _metrics)
+            foreach (var kv in _metrics)
             {
                 var data = kv.Value.FlushToString();
 
-                if(string.IsNullOrEmpty(data))
+                if (string.IsNullOrEmpty(data))
                 {
                     continue;
                 }
@@ -32,20 +50,19 @@ namespace BeeInstant.NetSDK
 
         public void IncrementCounter(string counterName, int value)
         {
-            if(!Dimensions.IsValidName(counterName))
+            if (!Dimensions.IsValidName(counterName))
             {
                 MetricsManager.ReportError($"Invalid counter name: {counterName}");
                 return;
             }
 
-            if(_metrics.ContainsKey(counterName))
+            if (_metrics.ContainsKey(counterName))
             {
-                if(_metrics.TryGetValue(counterName, out IMetric cntr)
-                    && cntr is ICounter)
+                if (_metrics.TryGetValue(counterName, out var mtrc) && mtrc is ICounter cntr)
                 {
-                    (cntr as ICounter).IncrementCounter(value);
+                    cntr.IncrementCounter(value);
                 }
-                
+
                 return;
             }
 
@@ -56,15 +73,15 @@ namespace BeeInstant.NetSDK
 
         public MetricsCollector Merge(MetricsCollector target)
         {
-            if(target != this)
+            if (target == this)
             {
-                foreach(var targetMetric in target._metrics)
-                {
-                    _metrics.AddOrUpdate(targetMetric.Key, targetMetric.Value, (key, oldValue) => 
-                    {
-                        return targetMetric.Value.Merge(oldValue);
-                    });
-                }
+                return this;
+            }
+
+            foreach (var targetMetric in target._metrics)
+            {
+                _metrics.AddOrUpdate(targetMetric.Key, targetMetric.Value,
+                    (key, oldValue) => targetMetric.Value.Merge(oldValue));
             }
 
             return this;
@@ -72,9 +89,9 @@ namespace BeeInstant.NetSDK
 
         IMetric IMetric.Merge(IMetric target)
         {
-            if(target is MetricsCollector)
+            if (target is MetricsCollector collector)
             {
-                this.Merge(target as MetricsCollector);
+                Merge(collector);
             }
 
             return this;
@@ -82,19 +99,19 @@ namespace BeeInstant.NetSDK
 
         public void Record(string metricName, decimal value, Unit unit)
         {
-            if(!Dimensions.IsValidName(metricName))
+            if (!Dimensions.IsValidName(metricName))
             {
                 MetricsManager.ReportError($"Invalid metric name: {metricName}");
                 return;
             }
 
-            if(_metrics.ContainsKey(metricName))
+            if (_metrics.ContainsKey(metricName))
             {
-                if(_metrics.TryGetValue(metricName, out IMetric rec) && rec is IRecorder)
+                if (_metrics.TryGetValue(metricName, out var metric) && metric is IRecorder rec)
                 {
-                    (rec as IRecorder).Record(value, unit);
+                    rec.Record(value, unit);
                 }
-                
+
                 return;
             }
 
@@ -106,17 +123,17 @@ namespace BeeInstant.NetSDK
 
         public TimerMetric StartTimer(string timerName)
         {
-            if(!Dimensions.IsValidName(timerName))
+            if (!Dimensions.IsValidName(timerName))
             {
                 MetricsManager.ReportError($"Invalid timer name {timerName}");
                 return null;
             }
-            
-            if(_metrics.ContainsKey(timerName))
+
+            if (_metrics.ContainsKey(timerName))
             {
-                if(_metrics.TryGetValue(timerName, out IMetric tim) && tim is ITimer)
+                if (_metrics.TryGetValue(timerName, out var metric) && metric is ITimer tim)
                 {
-                    (tim as ITimer).StartTimer();
+                    tim.StartTimer();
                     return new TimerMetric(this, timerName);
                 }
             }
@@ -130,24 +147,23 @@ namespace BeeInstant.NetSDK
 
         public void StopTimer(string timerName)
         {
-            if(!Dimensions.IsValidName(timerName))
+            if (!Dimensions.IsValidName(timerName))
             {
                 MetricsManager.ReportError($"Invalid timer name {timerName}");
                 return;
             }
 
-            if(_metrics.ContainsKey(timerName))
+            if (!_metrics.ContainsKey(timerName))
             {
-                if(_metrics.TryGetValue(timerName, out IMetric tim) && tim is ITimer)
-                {
-                    (tim as ITimer).StopTimer();
-                }
+                return;
+            }
+
+            if (_metrics.TryGetValue(timerName, out var metric) && metric is ITimer tim)
+            {
+                tim.StopTimer();
             }
         }
 
-        public Dictionary<string, IMetric> GetMetrics()
-        {
-            return _metrics.ToDictionary(k => k.Key, v => v.Value);
-        }
+        public Dictionary<string, IMetric> GetMetrics() => _metrics.ToDictionary(k => k.Key, v => v.Value);
     }
 }

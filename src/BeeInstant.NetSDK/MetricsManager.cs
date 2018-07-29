@@ -1,6 +1,24 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 BeeInstant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+ * to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions
+ * of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
 using System;
 using BeeInstant.NetSDK.Utils;
-using System.Threading;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net;
@@ -13,26 +31,28 @@ using Microsoft.Extensions.Logging;
 using System.Web;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using System.Configuration;
 
 namespace BeeInstant.NetSDK
 {
     public class MetricsManager
     {
-        private static volatile MetricsManager instance;
-        private static object locker = new object();
+        private static volatile MetricsManager _instance;
+        private static readonly object Locker = new object();
 
-        private static readonly string metricForErrors = "MetricErrors";
-        private static readonly IDictionary<string, MetricsLogger> metricsLoggers = new Dictionary<string, MetricsLogger>();
-        private static readonly ConcurrentQueue<string> metricsQueue = new ConcurrentQueue<string>();
-        private static readonly ILoggerFactory _loggerFactory = new LoggerFactory();
-        private static readonly MetricsManagerOptions _options = new MetricsManagerOptions();
-        private static readonly ILogger _logger = _loggerFactory.AddConsole().CreateLogger(nameof(MetricsManager));
-        
+        private const string MetricForErrors = "MetricErrors";
+
+        private static readonly IDictionary<string, MetricsLogger> MetricsLoggers =
+            new Dictionary<string, MetricsLogger>();
+
+        private static readonly ConcurrentQueue<string> MetricsQueue = new ConcurrentQueue<string>();
+        private static readonly ILoggerFactory LoggerFactory = new LoggerFactory();
+        private static readonly MetricsManagerOptions Options = new MetricsManagerOptions();
+        private static readonly ILogger Logger = LoggerFactory.AddConsole().CreateLogger(nameof(MetricsManager));
+
         private static string _serviceName;
         private static string _environment;
         private static string _hostInfo;
-        private static MetricsLogger _rootMetricsLogger = null;
+        private static MetricsLogger _rootMetricsLogger;
         private static HttpClient _httpClient;
         private static IDisposable _flushSchedulerHandler;
 
@@ -43,14 +63,6 @@ namespace BeeInstant.NetSDK
             _hostInfo = hostInfo;
         }
 
-        public static MetricsManager Instance
-        {
-            get
-            {
-                return instance;
-            }
-        }
-
         public static void Initialize(string serviceName, string env, string hostInfo)
         {
             if (!Dimensions.IsValidName(serviceName))
@@ -58,54 +70,58 @@ namespace BeeInstant.NetSDK
                 throw new ArgumentException(nameof(serviceName));
             }
 
-            if (instance == null)
+            if (_instance != null)
             {
-                lock (locker)
+                return;
+            }
+
+            lock (Locker)
+            {
+                if (_instance != null)
                 {
-                    if (instance == null)
+                    return;
+                }
+
+                _instance = new MetricsManager(serviceName, env, hostInfo);
+
+                _environment = env;
+                _hostInfo = hostInfo;
+                _serviceName = serviceName;
+
+                var envDimension = GetEnvironmentDimension(env);
+
+                LoadOptionsFromConfigFile();
+
+                _rootMetricsLogger = GetOrAddRootMetricsLogger($"service={serviceName}{envDimension}");
+                _httpClient = ConfigureHttpClient();
+
+                if (!Options.IsManualFlush)
+                {
+                    try
                     {
-                        instance = new MetricsManager(serviceName, env, hostInfo);
-
-                        _environment = env;
-                        _hostInfo = hostInfo;
-                        _serviceName = serviceName;
-
-                        var envDimension = GetEnvironmentDimension(env);
-
-                        LoadOptionsFromConfigFile();
-
-                        _rootMetricsLogger = GetOrAddRootMetricsLogger($"service={serviceName}{envDimension}");
-                        _httpClient = ConfigureHttpClient();
-
-                        if (!_options.IsManualFlush)
-                        {
-                            try
-                            {
-                                _flushSchedulerHandler = InitializeFlushScheduler();
-                            }
-                            catch (Exception e)
-                            {
-                                _logger.LogError(e.ToString());
-                            }
-                        }
-
-                        _logger.LogInformation($"{nameof(MetricsManager)} successfuly initialized at {DateTime.UtcNow} UTC.");
-
+                        _flushSchedulerHandler = InitializeFlushScheduler();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e.ToString());
                     }
                 }
+
+                Logger.LogInformation($"{nameof(MetricsManager)} successfuly initialized at {DateTime.UtcNow} UTC.");
             }
         }
 
         public static void Initialize(string serviceName, string env)
         {
-            string hostName = string.Empty;
+            var hostName = string.Empty;
+
             try
             {
                 hostName = Dns.GetHostName();
             }
             catch (Exception e)
             {
-                _logger.LogError(e.ToString());
+                Logger.LogError(e.ToString());
                 throw new InvalidOperationException("Unable to resolve the local host name.");
             }
             finally
@@ -118,7 +134,7 @@ namespace BeeInstant.NetSDK
 
         public static MetricsLogger GetMetricsLogger(string dimensions)
         {
-            if (instance == null)
+            if (_instance == null)
             {
                 return new MetricsLogger("service=Dummy");
             }
@@ -138,27 +154,27 @@ namespace BeeInstant.NetSDK
             }
 
             var serializedDimensions = Dimensions.SerializeDimensionsToString(dimensionsMap);
-            return metricsLoggers.GetOrAdd(serializedDimensions, new MetricsLogger(dimensionsMap));
+            return MetricsLoggers.GetOrAdd(serializedDimensions, new MetricsLogger(dimensionsMap));
         }
 
         public static MetricsLogger GetRootMetricsLogger() => _rootMetricsLogger ?? new MetricsLogger("service=Dummy");
 
-        public static string GetEnvironment() => _environment;
+        public static string GetEnvironment() => _environment ?? string.Empty;
 
-        public static string GetServiceName() => _serviceName;
+        public static string GetServiceName() => _serviceName ?? string.Empty;
 
-        public static string GetHostInfo() => _hostInfo;
+        public static string GetHostInfo() => _hostInfo ?? string.Empty;
 
         public static void FlushAll()
         {
-            if (instance == null)
+            if (_instance == null)
             {
                 return;
             }
 
             var timeStamp = DateTimeHelpers.GetTimeStampInSeconds();
 
-            foreach (var item in metricsLoggers.Values)
+            foreach (var item in MetricsLoggers.Values)
             {
                 FlushMetricsLogger(item);
             }
@@ -169,42 +185,41 @@ namespace BeeInstant.NetSDK
         public static void Shutdown()
         {
             _flushSchedulerHandler?.Dispose();
-            instance = null;
+
+            _instance = null;
             _httpClient = null;
             _rootMetricsLogger = null;
-            metricsLoggers.Clear();
-            while(metricsQueue.TryDequeue(out string _));
+
+            MetricsLoggers.Clear();
+
+            while (MetricsQueue.TryDequeue(out _))
+            {
+            }
         }
 
         public static void ReportError(string errorMessage)
         {
-            if (instance != null)
+            if (_instance != null)
             {
-                _rootMetricsLogger?.IncrementCounter(metricForErrors, 1);
+                _rootMetricsLogger?.IncrementCounter(MetricForErrors, 1);
             }
-            
-            _logger.LogError(errorMessage);
+
+            Logger.LogError(errorMessage);
         }
 
         internal static void FlushMetricsLogger(MetricsLogger logger)
         {
-            logger.FlushToString((str) =>
-            {
-                metricsQueue.Enqueue(str);
-            });
+            logger.FlushToString((str) => { MetricsQueue.Enqueue(str); });
 
-            _rootMetricsLogger.FlushToString((str) =>
-            {
-                metricsQueue.Enqueue(str);
-            });
+            _rootMetricsLogger?.FlushToString((str) => { MetricsQueue.Enqueue(str); });
         }
 
         internal static void FlushToServer(long now)
         {
-            _logger.LogDebug("Flush to BeeInstant Server");
+            Logger.LogDebug("Flush to BeeInstant Server");
 
             var readyToSubmit = new List<string>();
-            readyToSubmit.AddRange(metricsQueue);
+            readyToSubmit.AddRange(MetricsQueue);
 
             var sb = new StringBuilder();
 
@@ -213,84 +228,87 @@ namespace BeeInstant.NetSDK
                 sb.AppendLine(entry);
             }
 
-            if (readyToSubmit.Any())
+            if (!readyToSubmit.Any())
             {
-                try
+                return;
+            }
+
+            try
+            {
+                var body = sb.ToString();
+                var uri = new StringBuilder(Uri.EscapeUriString($"{Options.EndPoint}/PutMetric"));
+                var signature = Sign(body);
+
+                if (string.IsNullOrEmpty(signature))
                 {
-                    var body = sb.ToString();
-                    var uri = new StringBuilder(Uri.EscapeUriString($"{_options.EndPoint}/PutMetric"));
-                    var signature = Sign(body);
-
-                    if (string.IsNullOrEmpty(signature))
-                    {
-                        return;
-                    }
-
-                    uri.Append("?signature=" + HttpUtility.UrlEncode(signature, Encoding.UTF8));
-                    uri.Append("&publicKey=" + HttpUtility.UrlEncode(_options.PublicKey, Encoding.UTF8));
-                    uri.Append("&timestamp=" + now);
-
-                    var request = new HttpRequestMessage(HttpMethod.Post, uri.ToString());
-                    // request.Properties.Add("content-type", "text/plain");
-                    // request.Headers.Add("content-type", "text/plain");
-                    request.Content = new StringContent(body, Encoding.UTF8, "text/plain");
-
-                    var result = _httpClient.SendAsync(request).Result;
-                    _logger.LogInformation($"Response: {result.Content.ReadAsStringAsync().Result}");
+                    return;
                 }
-                catch (Exception e)
+
+                uri.Append("?signature=" + HttpUtility.UrlEncode(signature, Encoding.UTF8));
+                uri.Append("&publicKey=" + HttpUtility.UrlEncode(Options.PublicKey, Encoding.UTF8));
+                uri.Append("&timestamp=" + now);
+
+                var request = new HttpRequestMessage(HttpMethod.Post, uri.ToString())
                 {
-                    _logger.LogError(e.ToString());
-                }
+                    Content = new StringContent(body, Encoding.UTF8, "text/plain")
+                };
+
+                var result = _httpClient.SendAsync(request).Result;
+                Logger.LogInformation($"Response: {result.Content.ReadAsStringAsync().Result}");
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e.ToString());
             }
         }
 
         private static void LoadOptionsFromConfigFile()
         {
             var builder = new ConfigurationBuilder()
-                                .SetBasePath(Directory.GetCurrentDirectory())
-                                .AddJsonFile("beeInstant.config.json", optional: false);
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("beeInstant.config.json", optional: false);
 
             IConfiguration config = builder.Build();
 
-            config.Bind(_options);
+            config.Bind(Options);
 
             var sb = new StringBuilder();
             sb.AppendLine("beeInstant.config.json configuration: ");
-            sb.AppendLine($"FlushInSeconds: {_options.FlushInSeconds}");
-            sb.AppendLine($"FlushStartDelayInSeconds: {_options.FlushStartDelayInSeconds}");
-            sb.AppendLine($"IsManualFlush: {_options.IsManualFlush}");
-            sb.AppendLine($"PublicKey: {_options.PublicKey}");
-            sb.AppendLine($"EndPoint: {_options.EndPoint}");
+            sb.AppendLine($"FlushInSeconds: {Options.FlushInSeconds}");
+            sb.AppendLine($"FlushStartDelayInSeconds: {Options.FlushStartDelayInSeconds}");
+            sb.AppendLine($"IsManualFlush: {Options.IsManualFlush}");
+            sb.AppendLine($"PublicKey: {Options.PublicKey}");
+            sb.AppendLine($"EndPoint: {Options.EndPoint}");
 
-            _logger.LogInformation(sb.ToString());
+            Logger.LogInformation(sb.ToString());
         }
 
         private static string Sign(string entity)
         {
-            if (!string.IsNullOrEmpty(_options.PublicKey) && !string.IsNullOrEmpty(_options.SecretKey))
+            if (string.IsNullOrEmpty(Options.PublicKey) || string.IsNullOrEmpty(Options.SecretKey))
             {
-                var bytes = Encoding.UTF8.GetBytes(entity);
-                try
-                {
-                    return Signature.Sign(bytes, _options.SecretKey);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e.ToString());
-                }
+                return string.Empty;
             }
 
-            return String.Empty;
+            var bytes = Encoding.UTF8.GetBytes(entity);
+
+            try
+            {
+                return Signature.Sign(bytes, Options.SecretKey);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e.ToString());
+            }
+
+            return string.Empty;
         }
 
         private static IDisposable InitializeFlushScheduler()
         {
-            return Observable.Timer(TimeSpan.FromSeconds(_options.FlushStartDelayInSeconds), TimeSpan.FromSeconds(_options.FlushInSeconds))
-                             .Subscribe(x =>
-                             {
-                                 FlushAll();
-                             });
+            return Observable.Timer(TimeSpan.FromSeconds(Options.FlushStartDelayInSeconds),
+                    TimeSpan.FromSeconds(Options.FlushInSeconds))
+                .Subscribe(x => { FlushAll(); });
         }
 
         private static HttpClient ConfigureHttpClient()
@@ -305,7 +323,7 @@ namespace BeeInstant.NetSDK
 
         private static string GetEnvironmentDimension(string env)
         {
-            var envDimensions = String.Empty;
+            var envDimensions = string.Empty;
 
             if (env.Trim().Length > 0)
             {
@@ -317,14 +335,14 @@ namespace BeeInstant.NetSDK
 
         private static MetricsLogger GetOrAddRootMetricsLogger(string name)
         {
-            if (metricsLoggers.ContainsKey(name))
+            if (MetricsLoggers.ContainsKey(name))
             {
-                return metricsLoggers[name];
+                return MetricsLoggers[name];
             }
 
             var logger = new MetricsLogger(name);
 
-            metricsLoggers.Add(name, logger);
+            MetricsLoggers.Add(name, logger);
 
             return logger;
         }

@@ -1,5 +1,22 @@
-using System.Text.RegularExpressions;
-using System.Threading;
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2018 BeeInstant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+ * to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions
+ * of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+ * TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
 using System.Threading.Tasks;
 using BeeInstant.NetSDK.Tests.TestUtils;
 using Xunit;
@@ -8,13 +25,12 @@ namespace BeeInstant.NetSDK.Tests
 {
     public class MetricsCollectorTests
     {
-        
         [Fact]
         public void TestCounters()
         {
             var collector = new MetricsCollector();
-            var numOfExceptionsMetricName = "NumOfExceptions";
-            var succeededMetricName = "Succeeded";
+            const string numOfExceptionsMetricName = "NumOfExceptions";
+            const string succeededMetricName = "Succeeded";
 
             collector.IncrementCounter(numOfExceptionsMetricName, 0);
             collector.IncrementCounter(numOfExceptionsMetricName, 1);
@@ -32,12 +48,13 @@ namespace BeeInstant.NetSDK.Tests
         public async Task TestStartStopTimers()
         {
             var collector = new MetricsCollector();
-            using (var clock = collector.StartTimer("Clock1"))
+
+            using (collector.StartTimer("Clock1"))
             {
                 await Task.Delay(100);
             }
 
-            using (var timer2 = collector.StartTimer("Clock2"))
+            using (collector.StartTimer("Clock2"))
             {
                 await Task.Delay(200);
             }
@@ -45,8 +62,10 @@ namespace BeeInstant.NetSDK.Tests
             var metrics = collector.GetMetrics();
 
             Assert.Equal(2, metrics.Count);
-            RecorderUtils.AssertRecorderOutput(new[] { 100.0M }, Unit.MilliSecond, metrics["Clock1"].FlushToString(), 10.0M);
-            RecorderUtils.AssertRecorderOutput(new[] { 200.0M }, Unit.MilliSecond, metrics["Clock2"].FlushToString(), 10.0M);
+            RecorderUtils.AssertRecorderOutput(new[] {100.0M}, Unit.MilliSecond, metrics["Clock1"].FlushToString(),
+                10.0M);
+            RecorderUtils.AssertRecorderOutput(new[] {200.0M}, Unit.MilliSecond, metrics["Clock2"].FlushToString(),
+                10.0M);
         }
 
         [Fact]
@@ -62,17 +81,18 @@ namespace BeeInstant.NetSDK.Tests
             var metrics = collector.GetMetrics();
 
             Assert.Equal(2, metrics.Count);
-            RecorderUtils.AssertRecorderOutput(new [] { 1.0M, 11.0M}, Unit.MilliSecond, metrics["Recorder1"].FlushToString());
-            RecorderUtils.AssertRecorderOutput(new [] { 2.0M, 22.0M}, Unit.Second, metrics["Recorder2"].FlushToString());
+            RecorderUtils.AssertRecorderOutput(new[] {1.0M, 11.0M}, Unit.MilliSecond,
+                metrics["Recorder1"].FlushToString());
+            RecorderUtils.AssertRecorderOutput(new[] {2.0M, 22.0M}, Unit.Second, metrics["Recorder2"].FlushToString());
         }
 
         [Fact]
         public void CollectorShouldIgnoreInvalidMetricNames()
         {
             var collector = new MetricsCollector();
-            var invalidName = "Invalid@Name";
+            const string invalidName = "Invalid@Name";
             collector.IncrementCounter(invalidName, 1);
-            using(collector.StartTimer(invalidName))
+            using (collector.StartTimer(invalidName))
             {
                 collector.Record(invalidName, 0, Unit.None);
             }
@@ -115,6 +135,6 @@ namespace BeeInstant.NetSDK.Tests
             var flushed = collector1.FlushToString();
 
             Assert.Equal("m.Counter=11", flushed);
-        } 
+        }
     }
 }

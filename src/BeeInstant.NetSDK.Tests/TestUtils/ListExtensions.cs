@@ -17,21 +17,17 @@
  * IN THE SOFTWARE.
  */
 
-using System.Text;
-using Xunit;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace BeeInstant.NetSDK.Tests
+namespace BeeInstant.NetSDK.Tests.TestUtils
 {
-    public class SignatureTests
+    public static class ListExtensions
     {
-        [Fact]
-        public void ShouldReturnProperHash()
+        public static void Shuffle<T>(this IList<T> list)
         {
-            var data = Encoding.UTF8.GetBytes("Hello");
-
-            var actual = Signature.Sign(data, "World");
-
-            Assert.Equal("RiiEN2EwRBFNIef615g3wSM2IC9MhQCFSPsiZpNCb1Y=", actual);
+            list = list.OrderBy(_ => new Guid()).ToList();
         }
     }
 }

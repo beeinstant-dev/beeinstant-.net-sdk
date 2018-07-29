@@ -17,21 +17,33 @@
  * IN THE SOFTWARE.
  */
 
-using System.Text;
-using Xunit;
+using System.Collections.Generic;
 
-namespace BeeInstant.NetSDK.Tests
+namespace BeeInstant.NetSDK.Utils
 {
-    public class SignatureTests
+    internal static class DictionaryExtensions
     {
-        [Fact]
-        public void ShouldReturnProperHash()
+        public static void AddOrUpdate<TK, TV>(this IDictionary<TK, TV> dict, TK key, TV value)
         {
-            var data = Encoding.UTF8.GetBytes("Hello");
+            if (dict.ContainsKey(key))
+            {
+                dict[key] = value;
+            }
+            else
+            {
+                dict.Add(key, value);
+            }
+        }
 
-            var actual = Signature.Sign(data, "World");
+        public static TV GetOrAdd<TK, TV>(this IDictionary<TK, TV> dict, TK key, TV value)
+        {
+            if (dict.ContainsKey(key))
+            {
+                return dict[key];
+            }
 
-            Assert.Equal("RiiEN2EwRBFNIef615g3wSM2IC9MhQCFSPsiZpNCb1Y=", actual);
+            dict.Add(key, value);
+            return value;
         }
     }
 }
