@@ -1,0 +1,8 @@
+{
+    "flushInSeconds": "10",
+    "FlushStartDelayInSeconds": "5",
+    "IsManualFlush": true,
+    "publicKey": "Hello",
+    "secretKey": "World",
+    "endPoint": "http://localhost:8989"
+}

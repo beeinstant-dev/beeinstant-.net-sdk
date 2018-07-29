@@ -5,9 +5,9 @@ using System.Text;
 
 namespace BeeInstant.NetSDK
 {
-    public class Signature
+    public static  class Signature
     {
-        public virtual string Sign(byte[] data, string key)
+        public static string Sign(byte[] data, string key)
         {
             var keyByteArray = Encoding.UTF8.GetBytes(key);
 

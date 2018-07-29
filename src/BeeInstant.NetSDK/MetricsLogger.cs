@@ -9,7 +9,7 @@ using BeeInstant.NetSDK.Utils;
 
 namespace BeeInstant.NetSDK
 {
-    public class MetricsLogger : IMetricsComposer, IStringFlushable
+    public class MetricsLogger : IMetricsComposer, IStringFlushableByAction
     {
         private readonly ConcurrentDictionary<string, MetricsCollector> _metricCollectors;
         private readonly IDictionary<string, string> _rootDimensions;
@@ -33,11 +33,11 @@ namespace BeeInstant.NetSDK
             _rootMetricsGroup = new MetricsGroup(this, GetRootDimensionsString());
         }
 
-        public MetricsGroup ExtendDimensions(string dimensions) => new MetricsGroup(this, dimensions);
+        public virtual MetricsGroup ExtendDimensions(string dimensions) => new MetricsGroup(this, dimensions);
 
-        public MetricsGroup ExtendMultipleDimensions(params string[] dimensions) => new MetricsGroup(this, dimensions);
+        public virtual MetricsGroup ExtendMultipleDimensions(params string[] dimensions) => new MetricsGroup(this, dimensions);
 
-        public MetricsGroup ExtendMultipleDimensionsIncludeRoot(params string[] dimensions)
+        public virtual MetricsGroup ExtendMultipleDimensionsIncludeRoot(params string[] dimensions)
         {
             var dimensionGroupWithRoot = new string[dimensions.Length + 1];
             Array.Copy(dimensions, dimensionGroupWithRoot, dimensions.Length);
@@ -46,22 +46,23 @@ namespace BeeInstant.NetSDK
             return new MetricsGroup(this, dimensionGroupWithRoot);
         }
         
-        public void Flush(long now)
+        public virtual void Flush()
         {
-            //TODO: implement
+            MetricsManager.FlushMetricsLogger(this);
+            MetricsManager.FlushToServer(DateTimeHelpers.GetTimeStampInSeconds());
         }
 
-        public void IncrementCounter(string counterName, int value) => _rootMetricsGroup.IncrementCounter(counterName, value);
+        public virtual void IncrementCounter(string counterName, int value) => _rootMetricsGroup.IncrementCounter(counterName, value);
 
-        public void Record(string metricName, decimal value, Unit unit) => _rootMetricsGroup.Record(metricName, value, unit);
+        public virtual void Record(string metricName, decimal value, Unit unit) => _rootMetricsGroup.Record(metricName, value, unit);
 
-        public TimerMetric StartTimer(string timerName) => _rootMetricsGroup.StartTimer(timerName);
+        public virtual TimerMetric StartTimer(string timerName) => _rootMetricsGroup.StartTimer(timerName);
 
-        public void StopTimer(string timerName) => _rootMetricsGroup.StopTimer(timerName);
+        public virtual void StopTimer(string timerName) => _rootMetricsGroup.StopTimer(timerName);
 
-        public IDictionary<string, string> GetRootDimensions() =>  new Dictionary<string, string>(_rootDimensions);
+        public virtual IDictionary<string, string> GetRootDimensions() =>  new Dictionary<string, string>(_rootDimensions);
         
-        public void UpdateMetricsCollector(string dimensions, Action<MetricsCollector> action)
+        public virtual void UpdateMetricsCollector(string dimensions, Action<MetricsCollector> action)
         {
             if(action == null)
             {
@@ -78,13 +79,9 @@ namespace BeeInstant.NetSDK
             }
         }
 
-        public string GetRootDimensionsString()
-        {
-            var dimensions = _rootDimensions.Select(x => $"{x.Key}={x.Value}");
-            return string.Join(",", dimensions);
-        }
-
-        public string FlushToString()
+        public virtual string FlushToString() => FlushToString(null);
+        
+        public virtual string FlushToString(Action<string> action)
         {
             Dictionary<string, MetricsCollector> readyToFlush;
 
@@ -115,11 +112,20 @@ namespace BeeInstant.NetSDK
                 {
                     continue;
                 }
+                var metric = $"{toFlush.Key},{metricsString}";
 
-                sb.AppendLine($"{toFlush.Key},{metricsString}");
+                sb.AppendLine(metric);
+
+                action?.Invoke(metric);
             }
 
             return sb.ToString();
+        }
+
+        public string GetRootDimensionsString()
+        {
+            var dimensions = _rootDimensions.Select(x => $"{x.Key}={x.Value}");
+            return string.Join(",", dimensions);
         }
 
         private void AddOrMergeMetricsCollector(string dimensions, MetricsCollector collector)

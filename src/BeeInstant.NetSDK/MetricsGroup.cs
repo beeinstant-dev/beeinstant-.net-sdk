@@ -19,23 +19,23 @@ namespace BeeInstant.NetSDK
                                               .ToList();
         }
 
-        public void IncrementCounter(string counterName, int value)
+        public virtual void IncrementCounter(string counterName, int value)
         {
             UpdateMetricsCollector(x => x.IncrementCounter(counterName, value));
         }
 
-        public void Record(string metricName, decimal value, Unit unit)
+        public virtual void Record(string metricName, decimal value, Unit unit)
         {
             UpdateMetricsCollector(x => x.Record(metricName, value, unit));
         }
 
-        public TimerMetric StartTimer(string timerName)
+        public virtual TimerMetric StartTimer(string timerName)
         {
             UpdateMetricsCollector(x => x.StartTimer(timerName));
             return new TimerMetric(this, timerName);
         }
 
-        public void StopTimer(string timerName)
+        public virtual void StopTimer(string timerName)
         {
             UpdateMetricsCollector(x => x.StopTimer(timerName));
         }

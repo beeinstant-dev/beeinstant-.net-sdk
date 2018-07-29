@@ -14,6 +14,9 @@ namespace BeeInstant.NetSDK.Tests
 {
     public class MetricsLoggerTests
     {
+
+        private static object locker = new object();
+
         [Fact]
         public void EmptyLoggerReturnsEmptyString()
         {
@@ -141,9 +144,9 @@ namespace BeeInstant.NetSDK.Tests
             }
 
             Assert.Equal(500, recorderValues.Count);
-            Assert.Equal(500, recorderValues.Sum());
+            Assert.Equal(500.0M, recorderValues.Sum());
             Assert.Equal(500, timerValues.Count);
-            Assert.Equal(500, counterValues.Sum());
+            Assert.Equal(500.0M, counterValues.Sum());
         }
 
         private ICollection<decimal> AssertAndExtractValues(string input, string metricName, string unit = "")
@@ -196,7 +199,6 @@ namespace BeeInstant.NetSDK.Tests
         private IList<Task> PopulateTasks(int samples, int totalTasks, Action action)
         {
             var tasks = new List<Task>();
-            var locker = new object();
 
             for (int i = 0; i < totalTasks; i++)
             {

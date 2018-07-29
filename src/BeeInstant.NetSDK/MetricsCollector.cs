@@ -34,7 +34,7 @@ namespace BeeInstant.NetSDK
         {
             if(!Dimensions.IsValidName(counterName))
             {
-                //TODO: MetricsManager.reportError
+                MetricsManager.ReportError($"Invalid counter name: {counterName}");
                 return;
             }
 
@@ -84,9 +84,8 @@ namespace BeeInstant.NetSDK
         {
             if(!Dimensions.IsValidName(metricName))
             {
+                MetricsManager.ReportError($"Invalid metric name: {metricName}");
                 return;
-                //TODO: MetricsManager.reportError
-                // throw new ArgumentException($"Invalid recorder name: {metricName}.");
             }
 
             if(_metrics.ContainsKey(metricName))
@@ -109,7 +108,7 @@ namespace BeeInstant.NetSDK
         {
             if(!Dimensions.IsValidName(timerName))
             {
-                //TODO: MetricsManager.reportError
+                MetricsManager.ReportError($"Invalid timer name {timerName}");
                 return null;
             }
             
@@ -133,7 +132,7 @@ namespace BeeInstant.NetSDK
         {
             if(!Dimensions.IsValidName(timerName))
             {
-                //TODO: MetricsManager.reportError
+                MetricsManager.ReportError($"Invalid timer name {timerName}");
                 return;
             }
 

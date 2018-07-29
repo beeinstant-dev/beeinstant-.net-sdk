@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 namespace BeeInstant.NetSDK.Utils
 {
-    public static class IDictionaryExtensions
+    internal static class IDictionaryExtensions
     {
-        public static void AddOrUpdate<K, V>(this SortedDictionary<K, V> dict, K key, V value)
+        public static void AddOrUpdate<K, V>(this IDictionary<K, V> dict, K key, V value)
         {
             if(dict.ContainsKey(key))
             {
@@ -13,6 +13,19 @@ namespace BeeInstant.NetSDK.Utils
             else
             {
                 dict.Add(key, value);
+            }
+        }
+
+        public static V GetOrAdd<K, V>(this IDictionary<K, V> dict, K key, V value)
+        {
+            if(dict.ContainsKey(key))
+            {
+                return dict[key];
+            }
+            else
+            {
+                dict.Add(key, value);
+                return value;
             }
         }
     }

@@ -47,8 +47,7 @@ namespace BeeInstant.NetSDK.Utils
 
                 if (keyValues.Length != 2)
                 {
-                    //TODO: log error
-                    //MetricsManager.reportError("Invalid dimension key=value pair format " + keyValuePair);
+                    MetricsManager.ReportError("Invalid dimension key=value pair format");
                     return new Dictionary<string, string>();
                 }
 
@@ -61,8 +60,7 @@ namespace BeeInstant.NetSDK.Utils
                 }
                 else
                 {
-                    //TODO: log error
-                    //MetricsManager.reportError("Invalid dimension key or value pair " + key + "=" + value);
+                    MetricsManager.ReportError("Invalid dimension key or value pair " + key + "=" + val);
                     return new Dictionary<string, string>();
                 }
             }
@@ -70,7 +68,7 @@ namespace BeeInstant.NetSDK.Utils
             return dimensionsMap;
         }
 
-        private static string SerializeDimensionsToString(IDictionary<string, string> dimensions)
+        public static string SerializeDimensionsToString(IDictionary<string, string> dimensions)
         {
             var dimensionsToJoin = dimensions.Select(x => $"d.{x.Key}={x.Value}").ToArray();
             return String.Join(",", dimensionsToJoin);
