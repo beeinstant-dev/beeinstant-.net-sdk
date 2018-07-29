@@ -37,10 +37,16 @@ namespace BeeInstant.NetSDK.Sample
                 Task.Delay(500).Wait();
             }
 
+            //service also allows you to extend the logging experience by grouping metrics
+            //together via dimensions. The line below creates a new logger with additional 
+            //property `api`.
+            var logger = MetricsManager.GetMetricsLogger("api=Counters");
+            //and then extends an existing logger by adding more specifi property
+            var extendedLogger = logger.ExtendDimensions("subApi=Recorders");
             //Imitate concurrent environment, create counter and record metrics and update them
             Parallel.For(0, 1000, (i) => {
-                MetricsManager.GetRootMetricsLogger().IncrementCounter("MyCounter", 1);
-                MetricsManager.GetRootMetricsLogger().Record("MyRecorder", 1.0M, Unit.Second);
+                logger.IncrementCounter("MyCounter", 1);
+                extendedLogger.Record("MyRecorder", 1.0M, Unit.Second);
             });         
 
             //If the 'IsManualFlush' config key is set to false, then the next line is redundant
