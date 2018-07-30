@@ -1,0 +1,8 @@
+{
+    "flushInSeconds": "5", 
+    "flushStartDelayInSeconds": "10",
+    "isManualFlush": true,
+    "publicKey": "yourPublicKey",
+    "secretKey": "yourSecretKey",
+    "endPoint": "https://{endpoint}.beeinstant.com"
+}
