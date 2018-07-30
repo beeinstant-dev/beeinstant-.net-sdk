@@ -6,12 +6,12 @@ Before usings this sample please make sure you've updated the `beeInstant.config
 
 ```
 {
-    "flushInSeconds": "5", //flush existing metrics to the server every 5 seconds
-    "flushStartDelayInSeconds": "10", //due time before automatically sending first metric to the server
-    "isManualFlush": true, // true is the metrics need to be pushed to the server automatically (form background process within your application)
-    "publicKey": "yourPublicKey", 
+    "publicKey": "yourPublicKey",
     "secretKey": "yourSecretKey",
-    "endPoint": "https://{endpoint}.beeinstant.com"
+    "endPoint": "https://{endpoint}.beeinstant.com",
+    "flushInSeconds": "5", // flush existing metrics to the server every 5 seconds
+    "flushStartDelayInSeconds": "10", // due time before automatically sending first metric to the server
+    "isManualFlush": false // if true, you will need to push metrics manually, otherwise metrics will be pushed automatically
 }
 ```
 
@@ -23,4 +23,4 @@ dotnet restore
 dotnet run
 ```
 
-It will now start pushing metrics to your BeeInstant instance. 
+It will now start pushing metrics to your BeeInstant instance.

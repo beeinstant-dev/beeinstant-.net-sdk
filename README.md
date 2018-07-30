@@ -15,7 +15,7 @@ MetricsManager.Initialize("MyCriticalService");
 var metricsLogger = MetricsManager.GetRootMetricsLogger();
 
 // Measure execution time with metric name "ExecutionTime"
-using(var timer = metricsLogger.StartTimer("ExecutionTime")) 
+using(var timer = metricsLogger.StartTimer("ExecutionTime"))
 {
     //
     // Some critical processing is happening here...
@@ -32,17 +32,23 @@ Open a BeeInstant account on https://beeinstant.com. After your account is activ
 
 ```
 {
-    "flushInSeconds": "5", //flush existing metrics to the server every 5 seconds
-    "flushStartDelayInSeconds": "10", //due time before automatically sending first metric to the server
-    "isManualFlush": true, // true is the metrics need to be pushed to the server automatically (form background process within your application)
-    "publicKey": "yourPublicKey", 
+    "publicKey": "yourPublicKey",
     "secretKey": "yourSecretKey",
-    "endPoint": "https://{endpoint}.beeinstant.com"
+    "endPoint": "https://{endpoint}.beeinstant.com",
+    "flushInSeconds": "5", // flush existing metrics to the server every 5 seconds
+    "flushStartDelayInSeconds": "10", // due time before automatically sending first metric to the server
+    "isManualFlush": false // if true, you will need to push metrics manually, otherwise metrics will be pushed automatically
 }
 ```
 
-Nuget Package coming soon...
+**Note:** `publicKey`, `secretKey`, `endPoint` can be found by logging in https://app.beeinstant.com and click on the Account menu on the top right corner.
 
+### Nuget Package
+URL: https://www.nuget.org/packages/BeeInstant.NetSDK/
+
+* PackageManager: `Install-Package BeeInstant.NetSDK -Version 1.0.1`
+* .NET CLI: `dotnet add package BeeInstant.NetSDK --version 1.0.1`
+* Paket CLI: `paket add BeeInstant.NetSDK --version 1.0.1`
 
 ## Usage by Examples
 
@@ -67,10 +73,10 @@ A metric logger is inspired from traditional loggers for example Log4J. But inst
 
 Let's capture ProcessingTime of Upload API using TimerMetric.
 ```
-void HandleVideoUpload() 
+void HandleVideoUpload()
 {
     // ...
-    using (var timer = metricsLogger.StartTimer("ProcessingTime")) 
+    using (var timer = metricsLogger.StartTimer("ProcessingTime"))
     {
         // ...
         // Read video
@@ -89,12 +95,12 @@ ProcessingTime's unit is milliseconds.
 During video processing, we will encounter some cases when we cannot read, compress or store video for various reasons. How can we know this thing happens in real-time? BeeInstant provides counter to handle this case.
 
 ```
-void HandleVideoUpload() 
+void HandleVideoUpload()
 {
     // ...
-    using (var timer = metricsLogger.StartTimer("ProcessingTime")) 
+    using (var timer = metricsLogger.StartTimer("ProcessingTime"))
     {
-        
+
         // Read video
         try
         {
@@ -102,12 +108,12 @@ void HandleVideoUpload()
             // Reading video
             // ...
             metricsLogger.IncrementCounter("ReadSuccess", 1);
-            
-        } catch (Exception e) 
+
+        } catch (Exception e)
         {
             metricsLogger.IncrementCounter("ReadFailure", 1);
         }
-        
+
         // Compress video
         // Store video
         // ...
@@ -121,14 +127,14 @@ void HandleVideoUpload()
 As a VideoSharing service, we are always interested in how big are videos uploaded by users. Size of a video is not timing or counter metric. In this case, BeeInstant provides recorder, a tool to record arbitrary metrics. Let's use a recorder to capture the number of bytes read for each video we process.
 
 ```
-void HandleVideoUpload() 
+void HandleVideoUpload()
 {
     // ...
-    using (var timer = metricsLogger.StartTimer("ProcessingTime")) 
+    using (var timer = metricsLogger.StartTimer("ProcessingTime"))
     {
-    
+
         // Read video
-        try 
+        try
         {
             decimal numOfReadBytes = 0.0M;
             // Reading ...
@@ -137,14 +143,14 @@ void HandleVideoUpload()
             // numOfReadBytes += 200
             // ...
             metricsLogger.Record("ReadBytes", numOfReadBytes,Unit.Byte);
-            
+
             metricsLogger.IncrementCounter("ReadSuccess", 1);
-    
-        } catch (Exception e) 
+
+        } catch (Exception e)
         {
             metricsLogger.IncrementCounter("ReadFailure", 1);
         }
-    
+
         // Compress video
         // Store video
         // ...
@@ -162,17 +168,17 @@ We have built a pretty good set of metrics around our Upload API. But can we dri
 void HandleVideoUpload() {
 
     // ...
-    using (var timer = metricsLogger.StartTimer("ProcessingTime")) 
+    using (var timer = metricsLogger.StartTimer("ProcessingTime"))
     {
 
         var readMetrics = metricsLogger.ExtendDimensions("step=Read");
-        using (var readTimer = readMetrics.StartTimer("Time")) 
+        using (var readTimer = readMetrics.StartTimer("Time"))
         {
             // Reading video here...
         }
 
         var compressMetrics = metricsLogger.ExtendDimensions("step=Compress");
-        using (var compressTimer = compressMetrics.StartTimer("Time")) 
+        using (var compressTimer = compressMetrics.StartTimer("Time"))
         {
             // Compressing video here...
         }
