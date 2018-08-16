@@ -220,6 +220,8 @@ namespace BeeInstant.NetSDK
 
             var readyToSubmit = new List<string>();
             readyToSubmit.AddRange(MetricsQueue);
+            
+            while(MetricsQueue.TryDequeue(out _));
 
             var sb = new StringBuilder();
 
@@ -256,7 +258,7 @@ namespace BeeInstant.NetSDK
                 var result = _httpClient.SendAsync(request).Result;
                 var content = result.Content.ReadAsStringAsync().Result;
                 var statusCode = result.StatusCode;
-                Logger.LogInformation($"Response with status code {statusCode} and content: {content}");
+                Logger.LogInformation($"Response with status code {statusCode}.");
             }
             catch (Exception e)
             {
